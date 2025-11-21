@@ -8,19 +8,17 @@ export default function Login() {
 	const [password, setPassword] = useState("");
 	const [showPassword, setShowPassword] = useState(false);
 	const [message, setMessage] = useState(null);
-  const navigate = useNavigate();
+    const navigate = useNavigate();
 
 
 
-	async function handleSubmit(e) {
+	const handleSubmit = async (e) => {
 		e.preventDefault();
 		setMessage(null);
 
-		// Determine backend base URL. Vite requires `VITE_` prefix for client env vars.
-		const baseUrl = import.meta.env.VITE_backend_url || import.meta.env.backend_url || "";
 
-		try {
-			const resp = await axios.post(`${baseUrl}/auth/login`, { email, password } ,{
+        try {
+			const resp = await axios.post(`${import.meta.env.VITE_backend_url}/auth/login`, { email, password } ,{
                 withCredentials: true
             });
 			const data = resp?.data || {};

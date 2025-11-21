@@ -1,19 +1,23 @@
 import { useState } from 'react'
 
 import './App.css'
-import { Route, Routes } from 'react-router-dom'
+import { Route, Routes, useLocation } from 'react-router-dom'
 import Login from './routes/Login'
 import Userdashboard from './routes/Userdashboard'
 import { ProtectedRoute } from './authRoutes/ProtectedRoute'
 
 import Register from './routes/Register'
 import AdminDashboard from './routes/AdminDashboard'
+import Navbar from './components/Navbar'
 
 function App() {
-
+  const location = useLocation();
+ const hideNavbarPaths = ["/login", "/register"];
+   const hideNavbar = hideNavbarPaths.includes(location.pathname);
 
   return (
   <>
+{!hideNavbar && <Navbar />}
   <Routes>
 
   {/* PUBLIC ROUTES */}
@@ -37,9 +41,7 @@ function App() {
       path="/admin/dashboard" 
       element={
         <ProtectedRoute>
-
             <AdminDashboard />
-
         </ProtectedRoute>
       } 
   />

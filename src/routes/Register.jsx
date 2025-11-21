@@ -1,5 +1,6 @@
+import axios from "axios";
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Register() {
 	const [name, setName] = useState("");
@@ -9,16 +10,33 @@ export default function Register() {
 	const [showPassword, setShowPassword] = useState(false);
 	const [message, setMessage] = useState(null);
 
-	function handleSubmit(e) {
+  const navigate = useNavigate();
+    const handleSubmit = async (e) => {
 		e.preventDefault();
-		if (!name || !email || !password) {
-			setMessage({ type: "error", text: "Please fill all required fields." });
-			return;
+        console.log("Submitting registration form...");
+        setMessage(null);
+
+
+        try {
+			const resp = await axios.post(`${import.meta.env.VITE_backend_url}/auth/signup`, { name, email, password, role } ,{
+                withCredentials: true
+            });
+			const data = resp?.data || {};
+
+			// store user in context + localStorage
+			if (data.user) {
+
+				localStorage.setItem("User", JSON.stringify(data.user));
+
+				// redirect based on role
+				const role = (data.user.role || "").toString().toLowerCase();
+				if (role === "admin") navigate("/admin/dashboard");
+				else navigate("/dashboard");
+			}
+		} catch (err) {
+			const msg = err?.response?.data?.message || err.message || "Network error";
+			console.error("Login error:", err);
 		}
-		const payload = { name, email, password, role };
-		console.log("Dummy register", payload);
-		setMessage({ type: "success", text: "Dummy registration successful." });
-		setPassword("");
 	}
 
 	return (
