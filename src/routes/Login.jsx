@@ -27,6 +27,8 @@ export default function Login() {
 			if (data.user) {
 
 				localStorage.setItem("User", JSON.stringify(data.user));
+				// store token if backend returned one (used for socket auth)
+				if (data.token) localStorage.setItem('token', data.token);
 
 				// redirect based on role
 				const role = (data.user.role || "").toString().toLowerCase();
@@ -39,22 +41,45 @@ export default function Login() {
 		}
 	}
 
-	return (
-		<div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-			<div className="max-w-md w-full bg-white shadow-md rounded-lg p-8">
-				<h2 className="mb-6 text-center text-2xl font-extrabold text-gray-900">Sign in to your account</h2>
+    const adminCred = () => {
+        setEmail("admin@shelfEx.com");
+        setPassword("admin@shelfEx.com");
+    }
 
-				{message && (
-					<div
-						className={`mb-4 text-sm px-3 py-2 rounded ${
-							message.type === "error" ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"
-						}`}
-					>
-						{message.text}
-					</div>
-				)}
+    const dummy1 = () => {
+        setEmail("m@m.com");
+        setPassword("namannaman");
+    }
 
-				<form onSubmit={handleSubmit} className="space-y-6">
+    const dummy2 = () => {
+         setEmail("Dummy2@temp.com");
+        setPassword("Dummy2@temp.com");
+    }
+
+	    return (
+            <div className="min-h-screen bg-gradient-to-tr from-pink-50 via-purple-50 to-indigo-50 flex items-center">
+                <div className="container mx-auto px-4 py-12">
+                    <div className="max-w-4xl mx-auto grid grid-cols-1 md:grid-cols-2 gap-8 items-center">
+                        <div className="hidden md:flex flex-col justify-center p-8 bg-gradient-to-br from-pink-500 to-purple-600 text-white rounded-lg shadow-lg">
+                            <h3 className="text-3xl text-center font-bold">Join ShelfEx</h3>
+                            <p className="mt-3 text-pink-100 text-center max-w-md">Create an account to track jobs, applicants and collaborate with your team.</p>
+                            <div className="mt-6 flex flex-wrap bg-black/20 rounded-2xl py-4 px-4 justify-center  gap-3">
+                                <span onClick={adminCred} className="inline-block px-3 py-1 bg-white/20 rounded">Admin Credential</span>
+                                <span onClick={dummy1} className="inline-block px-3 py-1 bg-white/20 rounded">Dummy User1</span>
+                                <span onClick={dummy2} className="inline-block px-3 py-1 bg-white/20 rounded">Dummy User2</span>
+                            </div>
+                        </div>
+    
+                        <div className="bg-white rounded-lg shadow-md p-8">
+                            <h2 className="text-2xl font-extrabold font-mono mb-4 text-gray-900">Login</h2>
+    
+                            {message && (
+                                <div className={`mt-4 p-3 rounded text-sm ${message.type === "error" ? "bg-red-50 text-red-700" : "bg-green-50 text-green-700"}`}>
+                                    {message.text}
+                                </div>
+                            )}
+    
+                   	<form onSubmit={handleSubmit} className="space-y-6">
 					<div>
 						<label htmlFor="email" className="block text-sm font-medium text-gray-700">
 							Email address
@@ -125,7 +150,12 @@ export default function Login() {
                         	<p className="mt-4 text-center text-sm text-gray-600">Don't have an account? <Link to="/register" className="text-pink-600 font-medium hover:underline">Register</Link></p>
 					</div>
 				</form>
-			</div>
-		</div>
-	);
+    
+                         
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
 }
+

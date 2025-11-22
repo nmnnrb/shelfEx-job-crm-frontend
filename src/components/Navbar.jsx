@@ -1,66 +1,45 @@
 import axios from 'axios'
-import React from 'react'
+import React, { useEffect, useState } from 'react'
+import NotificationBell from './NotificationBell'
 
 const Navbar = ({ onLogout }) => {
-	const handleLogout = async () => {
-	const res = await axios.post(`${import.meta.env.VITE_backend_url}/auth/logout`, {}, {
-        withCredentials: true
-    });
+  const [name, setName] = useState('')
 
-        localStorage.removeItem('User');
-        window.location.href = '/login';
+  useEffect(() => {
+    const raw = localStorage.getItem('User')
+    try {
+      const user = raw ? JSON.parse(raw) : null
+      if (user && user.name) setName(user.name)
+    } catch (e) {}
+  }, [])
 
-	}
+  const handleLogout = async () => {
+    try {
+      await axios.post(`${import.meta.env.VITE_backend_url}/auth/logout`, {}, { withCredentials: true })
+    } catch (e) {
+      console.debug('Logout failed', e?.message || e)
+    }
+    localStorage.removeItem('User')
+    localStorage.removeItem('token')
+    localStorage.removeItem('notifications')
+    window.location.href = '/login'
+  }
 
-	return (
-		<header style={styles.header}>
-			<div style={styles.title}>minicrm</div>
-			<div style={styles.right}>
-				<button aria-label="notifications" title="Notifications" style={styles.iconBtn}>🔔</button>
-				<button onClick={handleLogout} style={styles.logoutBtn}>Logout</button>
-			</div>
-		</header>
-	)
-}
+  return (
+    <header className="flex justify-between items-center px-4 py-3 border-b bg-white sticky top-0 z-50">
+      <div className="text-2xl  font-bold font-serif ">Hi <span      
+ >👋</span>, <span className='text-3xl font-sans'>{name} </span> </div>
 
-const styles = {
-	header: {
-		display: 'flex',
-		justifyContent: 'space-between',
-		alignItems: 'center',
-		padding: '10px 16px',
-		borderBottom: '1px solid #e5e7eb',
-		background: '#fff',
-		position: 'sticky',
-		top: 0,
-		zIndex: 1000,
-	},
-	title: {
-		fontSize: 18,
-		fontWeight: 700,
-		color: '#111827',
-		textTransform: 'lowercase',
-	},
-	right: {
-		display: 'flex',
-		alignItems: 'center',
-		gap: 12,
-	},
-	iconBtn: {
-		background: 'transparent',
-		border: 'none',
-		fontSize: 18,
-		cursor: 'pointer',
-	},
-	logoutBtn: {
-		background: '#ef4444',
-		color: '#fff',
-		border: 'none',
-		padding: '6px 12px',
-		borderRadius: 6,
-		cursor: 'pointer',
-		fontWeight: 600,
-	},
+
+        <h1 className='text-2xl font-bold  px-4 text-blue-500 '>ShelfEx - Job Management</h1>
+      <div className="flex items-center gap-3">
+        <div aria-label="notifications" title="Notifications" className="p-1 rounded-md hover:bg-gray-100">
+          <NotificationBell />
+        </div>
+        <button onClick={handleLogout} className="bg-red-500 text-white px-3 py-1 rounded-md font-semibold hover:bg-red-600">Logout</button>
+      </div>
+    </header>
+  )
 }
 
 export default Navbar

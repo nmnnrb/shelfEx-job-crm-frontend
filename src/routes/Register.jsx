@@ -27,6 +27,8 @@ export default function Register() {
 			if (data.user) {
 
 				localStorage.setItem("User", JSON.stringify(data.user));
+				// store token if backend returned one (used for socket auth)
+				if (data.token) localStorage.setItem('token', data.token);
 
 				// redirect based on role
 				const role = (data.user.role || "").toString().toLowerCase();
@@ -93,7 +95,7 @@ export default function Register() {
 							</div>
 						</form>
 
-						<p className="mt-4 text-sm text-gray-600">Already registered? <Link to="/login" className="text-pink-600 font-medium hover:underline">Sign in</Link></p>
+						<p className="mt-4 text-sm text-center text-gray-600">Already registered? <Link to="/login" className="text-pink-600 font-medium hover:underline">Sign in</Link></p>
 					</div>
 				</div>
 			</div>
