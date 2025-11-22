@@ -27,7 +27,7 @@ const Userdashboard = () => {
   const fetchJobs = async () => {
     setLoading(true);
     try {
-      const resp = await axios.get(`${import.meta.env.VITE_backend_url}/job`, { withCredentials: true });
+      const resp = await axios.get(`/api/job`, { withCredentials: true });
       const data = resp?.data || [];
       const sorted = sortByDateField(data, 'appliedDate', 'desc');
       setAllJobs(sorted);
@@ -112,7 +112,7 @@ const Userdashboard = () => {
     e.preventDefault();
     setFormLoading(true);
     try {
-      const resp = await axios.post(`${import.meta.env.VITE_backend_url}/job`, form, { withCredentials: true });
+      const resp = await axios.post(`/api/job`, form, { withCredentials: true });
       const created = resp?.data;
       setJobs((s) => [created, ...s]);
       setAllJobs((s) => [created, ...s]);
@@ -130,7 +130,7 @@ const Userdashboard = () => {
     if (!editingJob) return;
     setFormLoading(true);
     try {
-      const resp = await axios.put(`${import.meta.env.VITE_backend_url}/job/${editingJob._id}`, form, { withCredentials: true });
+      const resp = await axios.put(`/api/job/${editingJob._id}`, form, { withCredentials: true });
       console.log("Update response", resp);
       const updated = resp?.data;
       setJobs((s) => s.map((j) => (j._id === updated._id ? updated : j)));
@@ -148,7 +148,7 @@ const Userdashboard = () => {
   const handleDelete = async (id) => {
     setDeletingId(id);
     try {
-      await axios.delete(`${import.meta.env.VITE_backend_url}/job/${id}`, { withCredentials: true });
+      await axios.delete(`/api/job/${id}`, { withCredentials: true });
       setJobs((s) => s.filter((j) => j._id !== id));
       setAllJobs((s) => s.filter((j) => j._id !== id));
       console.log("Job deleted:", id);
@@ -162,7 +162,7 @@ const Userdashboard = () => {
 
     const changeStatus = async (id, newStatus) => {
     try {
-    const res =   await axios.put(`${import.meta.env.VITE_backend_url}/job/${id}`, { status: newStatus } , {
+    const res =   await axios.put(`/api/job/${id}`, { status: newStatus } , {
       withCredentials: true
     });
     console.log('changeStatus response', res);

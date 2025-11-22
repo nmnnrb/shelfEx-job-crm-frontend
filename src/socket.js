@@ -2,7 +2,8 @@ import { io } from "socket.io-client";
 
 
 // default to backend port 4001 where your server runs
-const URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:8080";
+// const URL = import.meta.env.VITE_SOCKET_URL || "http://localhost:8080";
+const URL = window.location.origin; 
 const token =  localStorage.getItem("token");
 
 export const socket = io(URL, {

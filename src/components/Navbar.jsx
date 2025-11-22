@@ -15,7 +15,7 @@ const Navbar = ({ onLogout }) => {
 
   const handleLogout = async () => {
     try {
-      await axios.post(`${import.meta.env.VITE_backend_url}/auth/logout`, {}, { withCredentials: true })
+      await axios.post(`/api/auth/logout`, {}, { withCredentials: true })
     } catch (e) {
       console.debug('Logout failed', e?.message || e)
     }

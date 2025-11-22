@@ -13,7 +13,7 @@ const AdminDashboard = () => {
       const fetchJobs = async () => {
     setLoading(true);
     try {
-      const resp = await axios.get(`${import.meta.env.VITE_backend_url}/job/admin/all`, { withCredentials: true });
+      const resp = await axios.get(`/api/job/admin/all`, { withCredentials: true });
       console.log('Fetched jobs:', resp?.data);
               const data = resp?.data || [];
               // default sort by appliedDate newest first
@@ -72,7 +72,7 @@ const AdminDashboard = () => {
     const deletePost = async (id) => {
     
     try{
-      await axios.delete(`${import.meta.env.VITE_backend_url}/job/admin/${id}` , {
+      await axios.delete(`/api/job/admin/${id}` , {
         withCredentials: true
       });
       fetchJobs();
@@ -111,7 +111,7 @@ const AdminDashboard = () => {
         notes: editJob.notes,
         status: editJob.status
       }
-      await axios.put(`${import.meta.env.VITE_backend_url}/job/admin/${editJob._id}`, payload, { withCredentials: true });
+      await axios.put(`/api/job/admin/${editJob._id}`, payload, { withCredentials: true });
       await fetchJobs();
       closeEdit();
     } catch (err) {
@@ -125,7 +125,7 @@ const AdminDashboard = () => {
     //------------ change status
   const changeStatus = async (id, newStatus) => {
     try {
-    const res =   await axios.put(`${import.meta.env.VITE_backend_url}/job/admin/${id}`, { status: newStatus } , {
+    const res =   await axios.put(`/api/job/admin/${id}`, { status: newStatus } , {
       withCredentials: true
     });
     console.log('changeStatus response', res);
