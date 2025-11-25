@@ -1,10 +1,12 @@
 import axios from 'axios'
 import React, { useEffect, useState } from 'react'
 import NotificationBell from './NotificationBell'
+import { useNavigate } from 'react-router-dom';
+
 
 const Navbar = ({ onLogout }) => {
-  const [name, setName] = useState('')
-
+  const [name, setName] = useState('');
+  const navigate = useNavigate();
   useEffect(() => {
     const raw = localStorage.getItem('User')
     try {
@@ -12,6 +14,13 @@ const Navbar = ({ onLogout }) => {
       if (user && user.name) setName(user.name)
     } catch (e) {}
   }, [])
+
+
+ 
+ 
+ 
+
+
 
   const handleLogout = async () => {
     try {
@@ -22,8 +31,11 @@ const Navbar = ({ onLogout }) => {
     localStorage.removeItem('User')
     localStorage.removeItem('token')
     localStorage.removeItem('notifications')
-    window.location.href = '/login'
+    navigate('/login');
   }
+
+
+  
 
   return (
     <header className="flex justify-between items-center px-4 py-3 border-b bg-white sticky top-0 z-50">

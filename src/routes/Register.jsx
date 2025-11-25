@@ -41,6 +41,8 @@ export default function Register() {
 		}
 	}
 
+
+	
 	return (
 		<div className="min-h-screen bg-gradient-to-tr from-pink-50 via-purple-50 to-indigo-50 flex items-center">
 			<div className="container mx-auto px-4 py-12">
@@ -49,7 +51,7 @@ export default function Register() {
 						<h3 className="text-3xl font-bold">Join ShelfEx</h3>
 						<p className="mt-3 text-pink-100 max-w-md">Create an account to track jobs, applicants and collaborate with your team.</p>
 						<div className="mt-6 flex gap-3">
-							<span className="inline-block px-3 py-1 bg-white/20 rounded">For Teams</span>
+							<span className="inline-block px-3 py-1 bg-white/20 rounded">For Admin</span>
 							<span className="inline-block px-3 py-1 bg-white/20 rounded">For Individuals</span>
 						</div>
 					</div>

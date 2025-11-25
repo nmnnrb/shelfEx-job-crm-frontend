@@ -1,4 +1,3 @@
-import { useState } from 'react'
 
 import './App.css'
 import { Route, Routes, useLocation } from 'react-router-dom'
@@ -9,10 +8,11 @@ import { ProtectedRoute } from './authRoutes/ProtectedRoute'
 import Register from './routes/Register'
 import AdminDashboard from './routes/AdminDashboard'
 import Navbar from './components/Navbar'
+import { LoggedRoute } from './authRoutes/LoggedRoute'
 
 function App() {
   const location = useLocation();
- const hideNavbarPaths = ["/login", "/register"];
+ const hideNavbarPaths = ["/login", "/register" , "/"];
    const hideNavbar = hideNavbarPaths.includes(location.pathname);
 
   return (
@@ -21,8 +21,22 @@ function App() {
   <Routes>
 
   {/* PUBLIC ROUTES */}
-  <Route path="/login" element={<Login />} />
-  <Route path="/register" element={<Register />} />
+  <Route path="/login" element={
+    <LoggedRoute>
+      <Login />
+    </LoggedRoute>
+    } />
+
+  <Route path="/" element={
+    <LoggedRoute>
+      <Login />
+    </LoggedRoute>
+  } />
+  <Route path="/register" element={
+    <LoggedRoute>
+      <Register />
+    </LoggedRoute>
+  } />
 
   {/* USER ROUTES */}
   <Route 
@@ -46,16 +60,7 @@ function App() {
       } 
   />
 
-  {/* <Route 
-      path="/admin/jobs" 
-      element={
-        <ProtectedRoute>
-          <AdminRoute>
-            <AdminJobs />
-          </AdminRoute>
-        </ProtectedRoute>
-      } 
-  /> */}
+
 
 </Routes>
 

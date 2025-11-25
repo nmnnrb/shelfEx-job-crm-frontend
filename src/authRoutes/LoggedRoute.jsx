@@ -1,21 +1,21 @@
 import { useEffect, useState } from "react";
-import { Navigate } from "react-router-dom";
+import { Link, Navigate } from "react-router-dom";
 import axios from "axios";
 import LoadingSkel from "../components/LoadingSkel";
 
-export const ProtectedRoute = ({ children }) => {
+export const LoggedRoute = ({ children }) => {
   const [isUser, setIsUser] = useState(null); 
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        console.log("👉 ProtectedRoute: sending /auth/check request...");
+
 
         const res = await axios.get(`/api/auth/check`, {
           withCredentials: true,
         });
         console.log("Auth check response:", res.data);
-        setIsUser(res.data.authenticated);
+        setIsUser(res.data);
       } catch (err) {
         setIsUser(false);
       }
@@ -24,18 +24,28 @@ export const ProtectedRoute = ({ children }) => {
     checkAuth();
   }, []);
 
-  // 🔵 Show loader while checking
+
+  
   if (isUser === null) {
     return <div>
       <LoadingSkel />
     </div>;
   }
 
-  // 🔴 Not authenticated → redirect
-  if (!isUser) {
-    return <Navigate to="/login" />;
+
+
+  
+  if (isUser.authenticated) {
+    
+    //casing
+    if(isUser.user.role === "admin"){
+      return <Navigate to="/admin/dashboard" />;
+    }else{
+      return <Navigate to="/dashboard" />;
+    }
+
   }
 
-  // 🟢 Authenticated → allow access
+
   return children;
 };
