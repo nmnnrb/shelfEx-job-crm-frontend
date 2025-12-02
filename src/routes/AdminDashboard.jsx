@@ -6,80 +6,80 @@ import JobCard from '../components/JobCard'
 const AdminDashboard = () => {
 
     const [jobs, setJobs] = useState([]);
-    const [allJobs, setAllJobs] = useState([]);
+      const [allJobs, setAllJobs] = useState([]);
+      const [page, setPage] = useState(1);
+      const [pages, setPages] = useState(1);
+      const [total, setTotal] = useState(0);
+      const [limit, setLimit] = useState(10);
+      const [deletingId, setDeletingId] = useState(null);
     const [loading, setLoading] = useState(false);
 
   
-      const fetchJobs = async () => {
+      const fetchJobs = async (pageArg = 1) => {
     setLoading(true);
     try {
-      const resp = await axios.get(`/api/job/admin/all`, { withCredentials: true });
-      console.log('Fetched jobs:', resp?.data);
-              const data = resp?.data || [];
-              // default sort by appliedDate newest first
-              const sorted = sortByDateField(data, 'appliedDate', 'desc');
-              setAllJobs(sorted);
-              setJobs(sorted);
+      const resp = await axios.get(`http://localhost:8080/api/job/admin/all?page=${pageArg || 1}&limit=${limit}`, { withCredentials: true });
+      const data = resp?.data || {};
+      // response expected: { jobs, total, page, pages }
+      const jobsPage = data.jobs || [];
+      setAllJobs(jobsPage);
+      // keep local sort/filter capability on this page
+      const sorted = sortByDateField(jobsPage, 'appliedDate', 'desc');
+      setJobs(sorted);
+      setTotal(data.total || 0);
+      setPage(data.page || (pageArg || 1));
+      setPages(data.pages || 1);
     } catch (err) {
       console.error("Error fetching jobs", err);
     }
     setLoading(false);
   };
   useEffect(() => {
-    fetchJobs();
+    fetchJobs(page);
   }, []);
 
     useEffect(() => {
-    const onAdminUpdated = (job) => {
-      // refresh list when another admin updates a job
-      fetchJobs();
-    }
+      // unify event listeners so both admin and user dashboards respond
+      const events = [
+        'jobCreated',
+        'newJob',
+        'jobUpdated',
+        'jobDeleted',
+        'jobStatusUpdated',
+        'statusUpdated',
+        'adminJobCreated',
+        'adminJobUpdated',
+        'adminJobDeleted'
+      ];
 
-    const onAdminDeleted = ({ id }) => {
-      fetchJobs();
-    }
+      const handler = (payload) => {
+        console.debug('[socket] AdminDashboard received event, refreshing page', payload && (payload._id || payload.id || payload));
+        // refresh current page
+        fetchJobs(page);
+      };
 
-    const onCreated = (job) => {
-      // when a user creates a job, refresh the list so the new card appears
-      fetchJobs();
-    }
+      events.forEach(ev => socket.on(ev, handler));
 
-    const onJobUpdated = (job) => {
-      // server may emit 'jobUpdated' when a user edits their job
-      fetchJobs();
-    }
-
-    socket.on('adminJobUpdated', onAdminUpdated)
-    socket.on('adminJobDeleted', onAdminDeleted)
-    socket.on('adminJobCreated', onCreated)
-    socket.on('jobCreated', onCreated)
-    socket.on('newJob', onCreated)
-    socket.on('jobUpdated', onJobUpdated)
-
-    return () => {
-      socket.off('adminJobUpdated', onAdminUpdated)
-      socket.off('adminJobDeleted', onAdminDeleted)
-      socket.off('adminJobCreated', onCreated)
-      socket.off('jobCreated', onCreated)
-      socket.off('newJob', onCreated)
-      socket.off('jobUpdated', onJobUpdated)
-    }
+      return () => {
+        events.forEach(ev => socket.off(ev, handler));
+      }
   }, [])
 
 
   //---delete
 
     const deletePost = async (id) => {
-    
-    try{
-      await axios.delete(`/api/job/admin/${id}` , {
-        withCredentials: true
-      });
-      fetchJobs();
-    } catch (err) {
-      console.error('deletePost failed', err);
-
-    }
+      setDeletingId(id);
+      try{
+        await axios.delete(`http://localhost:8080/api/job/admin/${id}` , {
+          withCredentials: true
+        });
+        await fetchJobs(page);
+      } catch (err) {
+        console.error('deletePost failed', err);
+      } finally {
+        setDeletingId(null);
+      }
   };
 
 
@@ -111,8 +111,8 @@ const AdminDashboard = () => {
         notes: editJob.notes,
         status: editJob.status
       }
-      await axios.put(`/api/job/admin/${editJob._id}`, payload, { withCredentials: true });
-      await fetchJobs();
+      await axios.put(`http://localhost:8080/api/job/admin/${editJob._id}`, payload, { withCredentials: true });
+      await fetchJobs(page);
       closeEdit();
     } catch (err) {
       console.error('submitEdit failed', err);
@@ -125,11 +125,11 @@ const AdminDashboard = () => {
     //------------ change status
   const changeStatus = async (id, newStatus) => {
     try {
-    const res =   await axios.put(`/api/job/admin/${id}`, { status: newStatus } , {
+    const res =   await axios.put(`http://localhost:8080/api/job/admin/${id}`, { status: newStatus } , {
       withCredentials: true
     });
     console.log('changeStatus response', res);
-      fetchJobs();
+      fetchJobs(page);
     } catch (err) {
       console.error('changeStatus failed', err);
     }
@@ -200,6 +200,62 @@ const AdminDashboard = () => {
   const openNote = (job) => setSelectedJob(job);
   const closeNote = () => setSelectedJob(null);
 
+  // Render pagination controls
+  const renderPagination = () => {
+    if (!pages || pages <= 1) return null;
+    const visible = [];
+    const start = Math.max(1, page - 2);
+    const end = Math.min(pages, page + 2);
+    if (start > 1) visible.push(1);
+    if (start > 2) visible.push('left-ellipsis');
+    for (let p = start; p <= end; p++) visible.push(p);
+    if (end < pages - 1) visible.push('right-ellipsis');
+    if (end < pages) visible.push(pages);
+
+    return (
+      <div className="mt-6 flex items-center justify-center gap-2">
+
+        <button
+          disabled={page <= 1}
+          onClick={() => fetchJobs(Math.max(1, page - 1))}
+          className="px-2 py-1 rounded border border-gray-200 hover:border-indigo-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition"
+        >
+          Prev
+        </button>
+
+        {visible.map((v, i) => {
+          if (v === 'left-ellipsis' || v === 'right-ellipsis') return <span key={i} className="px-2">…</span>;
+          return (
+            <button
+              key={i}
+              onClick={() => fetchJobs(v)}
+              className={`px-3 py-1 rounded ${v === page ? 'bg-indigo-600 text-white' : 'border border-gray-200 hover:border-indigo-400 cursor-pointer hover:shadow-sm'} focus:outline-none transition`}
+              aria-current={v === page ? 'page' : undefined}
+            >
+              {v}
+            </button>
+          )
+        })}
+
+        <button
+          disabled={page >= pages}
+          onClick={() => fetchJobs(Math.min(pages, page + 1))}
+          className="px-2 py-1 rounded border border-gray-200 hover:border-indigo-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition"
+        >
+          Next
+        </button>
+
+        <button
+          disabled={page >= pages}
+          onClick={() => fetchJobs(pages)}
+          className="px-2 py-1 rounded border border-gray-200 hover:border-indigo-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition"
+        >
+          Last
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div className='px-8 py-8'>
       <div className="mb-4">
@@ -222,9 +278,12 @@ const AdminDashboard = () => {
             onDelete={(id) => deletePost(id)}
             onView={(job) => openNote(job)}
             onChangeStatus={(id, newStatus) => changeStatus(id, newStatus)}
+            isDeleting={deletingId === (u._id || idx)}
           />
         ))}
       </div>
+
+      {renderPagination()}
 
       {/* Fullscreen modal for viewing notes */}
   {selectedJob && (

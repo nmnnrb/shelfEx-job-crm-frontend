@@ -18,7 +18,7 @@ export default function Register() {
 
 
         try {
-			const resp = await axios.post(`/api/auth/signup`, { name, email, password, role } ,{
+			const resp = await axios.post(`http://localhost:8080/api/auth/signup`, { name, email, password, role } ,{
                 withCredentials: true
             });
 			const data = resp?.data || {};

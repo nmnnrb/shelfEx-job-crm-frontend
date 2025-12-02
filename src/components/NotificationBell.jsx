@@ -64,7 +64,14 @@ const [notes, setNotes] = useState(() => {
 
 		return () => {
 			socket.off('statusUpdated', onStatus)
+			socket.off('jobStatusUpdated', onStatus)
 			socket.off('jobDeleted', onDeleted)
+			socket.off('adminJobDeleted', onDeleted)
+			socket.off('jobCreated', onCreated)
+			socket.off('newJob', onCreated)
+			socket.off('adminJobCreated', onCreated)
+			socket.off('jobUpdated', onUpdated)
+			socket.off('adminJobUpdated', onUpdated)
 		}
 	}, [])
 

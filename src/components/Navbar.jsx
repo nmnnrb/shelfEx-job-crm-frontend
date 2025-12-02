@@ -24,7 +24,7 @@ const Navbar = ({ onLogout }) => {
 
   const handleLogout = async () => {
     try {
-      await axios.post(`/api/auth/logout`, {}, { withCredentials: true })
+      await axios.post(`http://localhost:8080/api/auth/logout`, {}, { withCredentials: true })
     } catch (e) {
       console.debug('Logout failed', e?.message || e)
     }

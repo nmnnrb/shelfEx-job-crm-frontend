@@ -11,7 +11,7 @@ export const LoggedRoute = ({ children }) => {
       try {
 
 
-        const res = await axios.get(`/api/auth/check`, {
+        const res = await axios.get(`http://localhost:8080/api/auth/check`, {
           withCredentials: true,
         });
         console.log("Auth check response:", res.data);

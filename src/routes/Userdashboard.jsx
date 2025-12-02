@@ -6,6 +6,10 @@ import UserFilter from "../components/UserFilter";
 const Userdashboard = () => {
   const [jobs, setJobs] = useState([]);
   const [allJobs, setAllJobs] = useState([]);
+  const [page, setPage] = useState(1);
+  const [pages, setPages] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [limit, setLimit] = useState(10);
   const [loading, setLoading] = useState(false);
   const [showForm, setShowForm] = useState(false);
   const [editingJob, setEditingJob] = useState(null);
@@ -24,14 +28,18 @@ const Userdashboard = () => {
 
  
 
-  const fetchJobs = async () => {
+  const fetchJobs = async (pageArg = 1) => {
     setLoading(true);
     try {
-      const resp = await axios.get(`/api/job`, { withCredentials: true });
-      const data = resp?.data || [];
-      const sorted = sortByDateField(data, 'appliedDate', 'desc');
+      const resp = await axios.get(`http://localhost:8080/api/job?page=${pageArg}&limit=${limit}`, { withCredentials: true });
+      const data = resp?.data || {};
+      const jobsPage = data.jobs || [];
+      const sorted = sortByDateField(jobsPage, 'appliedDate', 'desc');
       setAllJobs(sorted);
       setJobs(sorted);
+      setTotal(data.total || 0);
+      setPage(data.page || pageArg);
+      setPages(data.pages || 1);
     } catch (err) {
       console.error("Error fetching jobs", err);
     }
@@ -39,26 +47,20 @@ const Userdashboard = () => {
   };
 
   useEffect(() => {
-    fetchJobs();
+    fetchJobs(page);
 
-    const refresh = () => fetchJobs();
-
-    socket.on('jobStatusUpdated', refresh)
-    socket.on('statusUpdated', refresh)
-    socket.on('jobDeleted', refresh)
-    socket.on('jobCreated', refresh)
-    socket.on('jobUpdated', refresh)
-
-    return () => {
-      socket.off('jobStatusUpdated', refresh)
-      socket.off('jobDeleted', refresh)
-      socket.off('jobCreated', refresh)
-      socket.off('jobUpdated', refresh)
+    // unify events: backend may emit admin-specific and generic events
+    const events = ['jobCreated','newJob','jobUpdated','jobDeleted','jobStatusUpdated','statusUpdated','adminJobCreated','adminJobUpdated','adminJobDeleted'];
+    const refresh = (payload) => {
+      console.debug('[socket] Userdashboard received event, refreshing page', payload && (payload._id || payload.id || payload));
+      fetchJobs(page);
     }
 
+    events.forEach(ev => socket.on(ev, refresh));
 
-
-
+    return () => {
+      events.forEach(ev => socket.off(ev, refresh));
+    }
   }, []);
 
   const openCreate = () => {
@@ -112,10 +114,10 @@ const Userdashboard = () => {
     e.preventDefault();
     setFormLoading(true);
     try {
-      const resp = await axios.post(`/api/job`, form, { withCredentials: true });
+      const resp = await axios.post(`http://localhost:8080/api/job`, form, { withCredentials: true });
       const created = resp?.data;
-      setJobs((s) => [created, ...s]);
-      setAllJobs((s) => [created, ...s]);
+      // refetch current page to keep server-side pagination consistent
+      await fetchJobs(page);
       setShowForm(false);
       setForm({ company: "", role: "", appliedDate: todayDate(), notes: "", status: "Applied" });
     } catch (err) {
@@ -130,11 +132,10 @@ const Userdashboard = () => {
     if (!editingJob) return;
     setFormLoading(true);
     try {
-      const resp = await axios.put(`/api/job/${editingJob._id}`, form, { withCredentials: true });
+      const resp = await axios.put(`http://localhost:8080/api/job/${editingJob._id}`, form, { withCredentials: true });
       console.log("Update response", resp);
       const updated = resp?.data;
-      setJobs((s) => s.map((j) => (j._id === updated._id ? updated : j)));
-      setAllJobs((s) => s.map((j) => (j._id === updated._id ? updated : j)));
+      await fetchJobs(page);
       setEditingJob(null);
       setShowForm(false);
       setForm({ company: "", role: "", appliedDate: todayDate(), notes: "", status: "Applied" });
@@ -148,29 +149,82 @@ const Userdashboard = () => {
   const handleDelete = async (id) => {
     setDeletingId(id);
     try {
-      await axios.delete(`/api/job/${id}`, { withCredentials: true });
-      setJobs((s) => s.filter((j) => j._id !== id));
-      setAllJobs((s) => s.filter((j) => j._id !== id));
+      await axios.delete(`http://localhost:8080/api/job/${id}`, { withCredentials: true });
+      await fetchJobs(page);
       console.log("Job deleted:", id);
     } catch (err) {
       console.error("Delete job error", err);
     } finally {
       setDeletingId(null);
-      fetchJobs();
     }
   };
 
     const changeStatus = async (id, newStatus) => {
     try {
-    const res =   await axios.put(`/api/job/${id}`, { status: newStatus } , {
+    const res =   await axios.put(`http://localhost:8080/api/job/${id}`, { status: newStatus } , {
       withCredentials: true
     });
     console.log('changeStatus response', res);
-      fetchJobs();
+        fetchJobs(page);
     } catch (err) {
       console.error('changeStatus failed', err);
     }
   };
+
+    const renderPagination = () => {
+      if (!pages || pages <= 1) return null;
+      const visible = [];
+      const start = Math.max(1, page - 2);
+      const end = Math.min(pages, page + 2);
+      if (start > 1) visible.push(1);
+      if (start > 2) visible.push('left-ellipsis');
+      for (let p = start; p <= end; p++) visible.push(p);
+      if (end < pages - 1) visible.push('right-ellipsis');
+      if (end < pages) visible.push(pages);
+
+      return (
+        <div className="mt-6 flex items-center justify-center gap-2">
+
+          <button
+            disabled={page <= 1}
+            onClick={() => fetchJobs(Math.max(1, page - 1))}
+            className="px-2 py-1 rounded border border-gray-200 hover:border-indigo-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            Prev
+          </button>
+
+          {visible.map((v, i) => {
+            if (v === 'left-ellipsis' || v === 'right-ellipsis') return <span key={i} className="px-2">…</span>;
+            return (
+              <button
+                key={i}
+                onClick={() => fetchJobs(v)}
+                className={`px-3 py-1 rounded ${v === page ? 'bg-indigo-600 text-white' : 'border border-gray-200 hover:border-indigo-400 cursor-pointer hover:shadow-sm'} focus:outline-none transition`}
+                aria-current={v === page ? 'page' : undefined}
+              >
+                {v}
+              </button>
+            )
+          })}
+
+          <button
+            disabled={page >= pages}
+            onClick={() => fetchJobs(Math.min(pages, page + 1))}
+            className="px-2 py-1 rounded border border-gray-200 hover:border-indigo-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            Next
+          </button>
+
+          <button
+            disabled={page >= pages}
+            onClick={() => fetchJobs(pages)}
+            className="px-2 py-1 rounded border border-gray-200 hover:border-indigo-400 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed transition"
+          >
+            Last
+          </button>
+        </div>
+      )
+    }
 
   return (
     <div className="p-6">
@@ -273,6 +327,8 @@ const Userdashboard = () => {
               <div className="text-gray-600">No jobs found.</div>
             )}
           </div>
+
+          {renderPagination()}
 
           {/* View modal for full details */}
           {selectedJob && (

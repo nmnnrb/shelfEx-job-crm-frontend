@@ -11,7 +11,7 @@ export const ProtectedRoute = ({ children }) => {
       try {
         console.log("👉 ProtectedRoute: sending /auth/check request...");
 
-        const res = await axios.get(`/api/auth/check`, {
+        const res = await axios.get(`http://localhost:8080/api/auth/check`, {
           withCredentials: true,
         });
         console.log("Auth check response:", res.data);
